@@ -1,0 +1,55 @@
+name: B5 Avatar Explainer CPU Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-b5-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: skills/directing-stickman-videos/package-lock.json
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install B5 renderer dependencies
+        working-directory: skills/directing-stickman-videos
+        run: npm ci
+
+      - name: Initialize the bundled B5 reference scaffold
+        run: node skills/directing-stickman-videos/scripts/character-explainer.mjs init "$RUNNER_TEMP/b5-test-project" --reference-scaffold
+
+      - name: Validate the B5 project
+        run: node skills/directing-stickman-videos/scripts/character-explainer.mjs validate "$RUNNER_TEMP/b5-test-project"
+
+      - name: Render all B5 frames on the GitHub CPU runner
+        run: node skills/directing-stickman-videos/scripts/character-explainer.mjs frames "$RUNNER_TEMP/b5-test-project" --output "$RUNNER_TEMP/b5-test-frames" --all --trusted-code
+
+      - name: Extract the bundled reference audio
+        run: ffmpeg -y -i skills/directing-stickman-videos/assets/b5/approved-sample.mp4 -vn -ac 2 -ar 48000 "$RUNNER_TEMP/b5-reference-audio.wav"
+
+      - name: Encode the B5 MP4
+        run: node skills/directing-stickman-videos/scripts/character-explainer.mjs encode "$RUNNER_TEMP/b5-test-project" --frames-dir "$RUNNER_TEMP/b5-test-frames" --audio "$RUNNER_TEMP/b5-reference-audio.wav" --output "$RUNNER_TEMP/b5-test-candidate"
+
+      - name: Upload the rendered MP4
+        uses: actions/upload-artifact@v4
+        with:
+          name: b5-cpu-test-video
+          path: ${{ runner.temp }}/b5-test-candidate
+          if-no-files-found: error
+          retention-days: 7
