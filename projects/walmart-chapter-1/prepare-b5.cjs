@@ -1,8 +1,11 @@
 "use strict";
 const fs=require("node:fs"),path=require("node:path");
-const project=process.argv[2], script=fs.readFileSync(path.join(project,"script.md"),"utf8");
 const crypto=require("node:crypto");
+const project=process.argv[2];
 const sha=p=>crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
+const sharp=require(path.join(process.env.GITHUB_WORKSPACE,"skills/directing-stickman-videos/node_modules/sharp"));
+async function main(){
+const script=fs.readFileSync(path.join(project,"script.md"),"utf8");
 const cfg=JSON.parse(fs.readFileSync(path.join(project,"scene/config.json"),"utf8"));
 cfg.duration=87.9061; cfg.fps=30; cfg.width=1920; cfg.height=1080;
 fs.writeFileSync(path.join(project,"scene/config.json"),JSON.stringify(cfg,null,2));
@@ -11,6 +14,17 @@ fs.appendFileSync(path.join(project,"scene/renderer.cjs"),"\nmodule.exports.qual
 const words=script.replace(/^#.*$/gm,"").trim().split(/\s+/).filter(Boolean);
 const n=words.length, start=0.35, end=cfg.duration-0.45, span=end-start;
 const timed=words.map((text,i)=>({text:text.replace(/[^A-Za-z0-9?'-]/g,"")||text,screen:text.replace(/[^A-Za-z0-9?'-]/g,"")||text,start:start+span*i/n,end:start+span*(i+0.92)/n}));
+const atlasPath=path.join(project,"scene/font-atlas.json"), atlas=JSON.parse(fs.readFileSync(atlasPath,"utf8"));
+const glyphDir=path.join(project,"scene/assets/type"); fs.mkdirSync(glyphDir,{recursive:true});
+let glyphId=0;
+for(const word of [...new Set(timed.map(w=>w.screen))]){
+  const key=`Instrument-Sans-1.ttf|62|-1.8|white|${word}`; if(atlas[key]) continue;
+  const width=Math.max(70,Math.ceil(word.length*35+32)), file=`assets/type/generated-${String(glyphId++).padStart(4,"0")}.png`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="136"><rect width="100%" height="100%" fill="white" fill-opacity="0"/><text x="16" y="84" font-family="Arial, sans-serif" font-size="62px" font-weight="700" fill="white">${word.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</text></svg>`;
+  await sharp(Buffer.from(svg)).png().toFile(path.join(project,"scene",file));
+  atlas[key]={file,width:width-32,image_width:width,image_height:136,baseline:84,pad:16};
+}
+fs.writeFileSync(atlasPath,JSON.stringify(atlas,null,2));
 fs.writeFileSync(path.join(project,"scene/word-timings.json"),JSON.stringify({words:timed},null,2));
 const groups=[]; for(let i=0;i<n;i+=3){const ids=[i,Math.min(i+1,n-1),Math.min(i+2,n-1)].filter((v,j,a)=>a.indexOf(v)===j);groups.push({lines:[ids],key:ids[0]});}
 fs.writeFileSync(path.join(project,"scene/caption-groups.json"),JSON.stringify(groups,null,2));
@@ -28,3 +42,5 @@ const production={
 fs.appendFileSync(path.join(project,"scene/renderer.cjs"),`module.exports.productionAssets=[{path:"assets/rig/spider-approved.svg",sha256:"${sha(path.join(scene,"assets/rig/spider-approved.svg"))}"}];\n`);
 fs.writeFileSync(path.join(scene,"production.json"),JSON.stringify(production,null,2));
 console.log(JSON.stringify({project,words:n,duration:cfg.duration,frames}));
+}
+main().catch(e=>{console.error(e);process.exit(1)});
