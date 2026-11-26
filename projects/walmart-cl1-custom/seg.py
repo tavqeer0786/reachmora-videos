@@ -1,5 +1,5 @@
 import subprocess, sys
-from scenes import *
+from scenes_all import *
 frame, scenes = make_renderer()
 a, b, out = int(sys.argv[1]), int(sys.argv[2]), sys.argv[3]
 cmd = ["ffmpeg","-y","-v","error","-f","rawvideo","-pix_fmt","rgb24","-s",f"{W}x{H}","-r",str(FPS),"-i","-",
