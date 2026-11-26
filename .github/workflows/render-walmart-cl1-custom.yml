@@ -38,20 +38,25 @@ jobs:
           mkdir -p fonts
           curl -L --fail -o fonts/ComicRelief-Bold.ttf https://github.com/google/fonts/raw/main/ofl/comicrelief/ComicRelief-Bold.ttf
           curl -L --fail -o fonts/Poppins-Bold.ttf https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Bold.ttf
+      - name: Join all voiceover chapters
+        working-directory: projects/walmart-cl1-custom
+        run: |
+          printf "file 'hook.mp3'\nfile 'ch-1.mp3'\nfile 'ch-2.mp3'\nfile 'ch-3.mp3'\nfile 'ch-4.mp3'\nfile 'ch-5.mp3'\nfile 'ch-6.mp3'\nfile 'ch-7.mp3'\nfile 'ch-8.mp3'\nfile 'final-chapter.mp3'\n" > voice-list.txt
+          ffmpeg -y -v error -f concat -safe 0 -i voice-list.txt -c:a libmp3lame -q:a 2 voice-all.mp3
       - name: Render contact sheet
         working-directory: projects/walmart-cl1-custom
         run: |
           mkdir -p out
-          python preview.py out/contact-sheet.jpg 0 7.3 11 14 16.5 26 29 35.5 38.5 43 46 53.5 59 65 68.5 70 77.5 82.5 87.5
+          python preview.py out/contact-sheet.jpg 0 60 80 150 200 260 340 420 500 600 700 800 890
       - name: Render segmented MP4 on GitHub CPU
         working-directory: projects/walmart-cl1-custom
-        run: python render_all.py "../../${{ inputs.voiceover }}" out/chapter-1.mp4
+        run: python render_all.py voice-all.mp3 out/walmart-black-friday-part-2.mp4
       - name: Verify output
         working-directory: projects/walmart-cl1-custom
-        run: ffprobe -v error -show_entries stream=width,height,codec_name,r_frame_rate -show_entries format=duration -of json out/chapter-1.mp4
+        run: ffprobe -v error -show_entries stream=width,height,codec_name,r_frame_rate -show_entries format=duration -of json out/walmart-black-friday-part-2.mp4
       - uses: actions/upload-artifact@v4
         with:
           name: walmart-chapter-1-custom-video
           path: |
-            projects/walmart-cl1-custom/out/chapter-1.mp4
+            projects/walmart-cl1-custom/out/walmart-black-friday-part-2.mp4
             projects/walmart-cl1-custom/out/contact-sheet.jpg
