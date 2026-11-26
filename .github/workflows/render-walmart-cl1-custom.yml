@@ -40,7 +40,9 @@ jobs:
           curl -L --fail -o fonts/Poppins-Bold.ttf https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Bold.ttf
       - name: Render contact sheet
         working-directory: projects/walmart-cl1-custom
-        run: python preview.py out/contact-sheet.jpg 0 7.3 11 14 16.5 26 29 35.5 38.5 43 46 53.5 59 65 68.5 70 77.5 82.5 87.5
+        run: |
+          mkdir -p out
+          python preview.py out/contact-sheet.jpg 0 7.3 11 14 16.5 26 29 35.5 38.5 43 46 53.5 59 65 68.5 70 77.5 82.5 87.5
       - name: Render segmented MP4 on GitHub CPU
         working-directory: projects/walmart-cl1-custom
         run: python render_all.py "../../${{ inputs.voiceover }}" out/chapter-1.mp4
