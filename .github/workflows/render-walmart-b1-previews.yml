@@ -1,0 +1,55 @@
+name: Render Walmart Chapters B1 Previews
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  previews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Clone the official style engine
+        run: git clone --depth 1 https://github.com/kaomei/stickman-video-director.git "$RUNNER_TEMP/stickman-video-director"
+      - name: Install official B1 dependencies
+        working-directory: ${{ runner.temp }}/stickman-video-director/skills/directing-stickman-videos
+        run: npm ci
+      - name: Prepare Chapter 1 native B1 project
+        run: |
+          mkdir -p "$RUNNER_TEMP/walmart-b1-ch1"
+          cp projects/walmart-chapter-1/script.md "$RUNNER_TEMP/walmart-b1-ch1/script.md"
+          cp projects/walmart-chapter-1/voiceover.mp3 "$RUNNER_TEMP/walmart-b1-ch1/narration.mp3"
+          node projects/walmart-b1/prepare-project.cjs "$RUNNER_TEMP/walmart-b1-ch1" "$RUNNER_TEMP/walmart-b1-ch1/narration.mp3" "$RUNNER_TEMP/walmart-b1-ch1/script.md" 1
+      - name: Prepare Chapter 2 native B1 project
+        run: |
+          mkdir -p "$RUNNER_TEMP/walmart-b1-ch2"
+          cp projects/walmart-chapter-2/script.md "$RUNNER_TEMP/walmart-b1-ch2/script.md"
+          cp projects/walmart-chapter-2/voiceover.mp3 "$RUNNER_TEMP/walmart-b1-ch2/narration.mp3"
+          node projects/walmart-b1/prepare-project.cjs "$RUNNER_TEMP/walmart-b1-ch2" "$RUNNER_TEMP/walmart-b1-ch2/narration.mp3" "$RUNNER_TEMP/walmart-b1-ch2/script.md" 2
+      - name: Render Chapter 1 B1 preview on GitHub CPU
+        working-directory: ${{ runner.temp }}/stickman-video-director/skills/directing-stickman-videos
+        run: node scripts/autopilot.mjs preview "$RUNNER_TEMP/walmart-b1-ch1" --seconds 20 --replace
+      - name: Render Chapter 2 B1 preview on GitHub CPU
+        working-directory: ${{ runner.temp }}/stickman-video-director/skills/directing-stickman-videos
+        run: node scripts/autopilot.mjs preview "$RUNNER_TEMP/walmart-b1-ch2" --seconds 20 --replace
+      - name: Collect preview artifacts
+        run: |
+          mkdir -p "$RUNNER_TEMP/walmart-b1-previews"
+          cp "$RUNNER_TEMP/walmart-b1-ch1/output/preview.mp4" "$RUNNER_TEMP/walmart-b1-previews/chapter-1-b1-preview.mp4"
+          cp "$RUNNER_TEMP/walmart-b1-ch2/output/preview.mp4" "$RUNNER_TEMP/walmart-b1-previews/chapter-2-b1-preview.mp4"
+          cp "$RUNNER_TEMP/walmart-b1-ch1/output/preview-report.json" "$RUNNER_TEMP/walmart-b1-previews/chapter-1-report.json"
+          cp "$RUNNER_TEMP/walmart-b1-ch2/output/preview-report.json" "$RUNNER_TEMP/walmart-b1-previews/chapter-2-report.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: walmart-chapters-b1-previews
+          path: ${{ runner.temp }}/walmart-b1-previews
+          if-no-files-found: error
+          retention-days: 7
