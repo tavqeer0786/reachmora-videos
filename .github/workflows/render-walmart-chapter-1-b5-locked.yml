@@ -1,0 +1,47 @@
+name: Render Walmart Chapter 1 B5 Locked Style
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: skills/directing-stickman-videos/package-lock.json
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install B5 dependencies
+        working-directory: skills/directing-stickman-videos
+        run: npm ci
+      - name: Prepare exact B5 sample project
+        run: |
+          node skills/directing-stickman-videos/scripts/character-explainer.mjs init "$RUNNER_TEMP/walmart-b5" --reference-scaffold
+          node projects/walmart-chapter-1-b5/prepare.cjs
+          cp projects/walmart-chapter-1-b5/stage.cjs "$RUNNER_TEMP/walmart-b5/scene/stage.cjs"
+          cp projects/walmart-chapter-1-b5/patch-renderer.cjs "$RUNNER_TEMP/patch-renderer.cjs"
+          cp projects/walmart-chapter-1-b5/word-timings.json "$RUNNER_TEMP/walmart-b5/scene/word-timings.json"
+          cp projects/walmart-chapter-1-b5/caption-groups.json "$RUNNER_TEMP/walmart-b5/scene/caption-groups.json"
+          cp projects/walmart-chapter-1-b5/speech-levels.json "$RUNNER_TEMP/walmart-b5/scene/speech-levels.json"
+          cp projects/walmart-chapter-1-b5/voiceover.mp3 "$RUNNER_TEMP/walmart-voiceover.mp3"
+          node "$RUNNER_TEMP/patch-renderer.cjs" "$RUNNER_TEMP/walmart-b5/scene/renderer.cjs"
+          node -e "const fs=require('fs');const p=process.env.RUNNER_TEMP+'/walmart-b5/scene/config.json';const c=JSON.parse(fs.readFileSync(p));c.duration=87.9061;fs.writeFileSync(p,JSON.stringify(c,null,2));"
+          ffmpeg -y -i "$RUNNER_TEMP/walmart-voiceover.mp3" -ar 48000 -ac 1 "$RUNNER_TEMP/walmart-final.wav"
+      - name: Render all frames on GitHub CPU
+        run: node skills/directing-stickman-videos/scripts/character-explainer.mjs frames "$RUNNER_TEMP/walmart-b5" --output "$RUNNER_TEMP/walmart-frames" --all --trusted-code
+      - name: Encode with the original B5 presenter pipeline
+        run: node skills/directing-stickman-videos/scripts/character-explainer.mjs encode "$RUNNER_TEMP/walmart-b5" --frames-dir "$RUNNER_TEMP/walmart-frames" --audio "$RUNNER_TEMP/walmart-final.wav" --output "$RUNNER_TEMP/walmart-candidate"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: walmart-black-friday-chapter-1-b5-locked
+          path: ${{ runner.temp }}/walmart-candidate
+          if-no-files-found: error
+          retention-days: 7
