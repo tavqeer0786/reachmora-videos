@@ -20,5 +20,5 @@ const replacement=`function captions(t){
 }
 `;
 s=s.slice(0,start)+replacement+s.slice(end);
-s=s.replace('module.exports={frame,presenter,captions,levels,blinks};','module.exports={frame,qualityFrame:t=>frame(t),presenter,captions,levels,blinks,productionAssets:[{path:"assets/rig/spider-approved.svg"}]};');
+s=s.replace('module.exports={frame,presenter,captions,levels,blinks};','module.exports={frame,qualityFrame:t=>frame(t),presenter,captions,levels,blinks,productionAssets:[{path:"assets/rig/spider-approved.svg",sha256:require("crypto").createHash("sha256").update(fs.readFileSync(path.join(ROOT,"assets/rig/spider-approved.svg"))).digest("hex")}]};');
 fs.writeFileSync(p,s);
