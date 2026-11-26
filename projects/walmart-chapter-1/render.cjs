@@ -6,12 +6,12 @@ const audio=path.join(ROOT,"voiceover.mp3"), duration=Number(process.env.VIDEO_D
 const chunks=[
   [0,9,"CHAPTER 1","THE PROBLEM WITH ONE BIG BLACK FRIDAY","A single day cannot catch every shopper."],
   [9,20,"CHRISTMAS SHOPPING","TV IN NOVEMBER","TOYS LATER","GROCERIES BEFORE CHRISTMAS"],
-  [20,31,"ONE DAY","ONE DECISION","Walmart risks missing customers who are not ready yet."],
-  [31,42,"SECOND EVENT","SECOND CHANCE","Another promotion brings shoppers back to the prices and products."],
+  [20,31,"ONE DAY","ONE DECISION","Walmart can miss the ready-later shopper."],
+  [31,42,"SECOND EVENT","SECOND CHANCE","Another promotion brings shoppers back."],
   [42,54,"NOT JUST BLACK FRIDAY","EARLY DEALS","BLACK FRIDAY","CYBER MONDAY","The season becomes a series of opportunities."],
-  [54,65,"STAY VISIBLE","SHOP NOW?","OR NEXT WEEK?","Walmart can remain visible while decisions are still happening."],
+  [54,65,"STAY VISIBLE","SHOP NOW?","OR NEXT WEEK?","Stay visible while decisions happen."],
   [65,77,"THE PROBLEM","AMAZON","TARGET","COMPARE EVERYTHING","Customers can shop almost anywhere."],
-  [77,duration,"THE QUESTION","WHY WALMART?","What makes a customer choose Walmart again?"],
+  [77,duration,"THE QUESTION","WHY WALMART?","What makes Walmart the next choice?"],
 ];
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
