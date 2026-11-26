@@ -35,6 +35,23 @@ jobs:
           node "$RUNNER_TEMP/patch-renderer.cjs" "$RUNNER_TEMP/walmart-b5/scene/renderer.cjs"
           node -e "const fs=require('fs');const p=process.env.RUNNER_TEMP+'/walmart-b5/scene/config.json';const c=JSON.parse(fs.readFileSync(p));c.duration=87.9061;fs.writeFileSync(p,JSON.stringify(c,null,2));"
           ffmpeg -y -i "$RUNNER_TEMP/walmart-voiceover.mp3" -ar 48000 -ac 1 "$RUNNER_TEMP/walmart-final.wav"
+          mkdir -p "$RUNNER_TEMP/walmart-b5/scene/audio"
+          cp "$RUNNER_TEMP/walmart-final.wav" "$RUNNER_TEMP/walmart-b5/scene/audio/final.wav"
+          node - <<'NODE'
+          const fs=require('fs'),crypto=require('crypto'),path=require('path');
+          const scene=process.env.RUNNER_TEMP+'/walmart-b5/scene';
+          const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(path.join(scene,p))).digest('hex');
+          const manifest={
+            presenter:{kind:'complex_character',path:'assets/rig/spider-approved.svg',sha256:sha('assets/rig/spider-approved.svg'),identity_anchor:'Keep the bundled B5 paper/ink presenter exactly unchanged.',style_anchor:'Use the approved bundled B5 presenter rig, mouth, gestures and scale.',static_approval:'User requested preservation of the previously tested B5 presenter.',source:{type:'approved_reuse',origin:'bundled B5 CPU test scaffold',references:[]}},
+            captions:{preset:'b5-instrument-anton-v1',font:{path:'assets/fonts/Instrument-Sans-1.ttf',sha256:sha('assets/fonts/Instrument-Sans-1.ttf')},title_font:{path:'assets/fonts/Anton-0.ttf',sha256:sha('assets/fonts/Anton-0.ttf')},semantic_review:'Chapter 1 sentence groups generated from the supplied script and timed across the supplied voice-over; preserve the original B5 upper-right caption animation and emphasis treatment.'},
+            sound:[{kind:'dialogue',start:0,end:87.9061,reason:'Supplied Chapter 1 voice-over',path:'audio/final.wav',sha256:sha('audio/final.wav'),rights:'User-supplied audio'}],
+            sound_review:'Technical encode check only; full listening review remains pending.',
+            mix:{path:'audio/final.wav',sha256:sha('audio/final.wav')},
+            motion:[{start:0,end:87.9061,role:'information',reason:'Left-stage Walmart shopping metaphors progress through chapter beats.',region:[0,0,1240,1080]}],
+            holds:[]
+          };
+          fs.writeFileSync(path.join(scene,'production.json'),JSON.stringify(manifest,null,2));
+          NODE
       - name: Render all frames on GitHub CPU
         run: node skills/directing-stickman-videos/scripts/character-explainer.mjs frames "$RUNNER_TEMP/walmart-b5" --output "$RUNNER_TEMP/walmart-frames" --all --trusted-code
       - name: Encode with the original B5 presenter pipeline
