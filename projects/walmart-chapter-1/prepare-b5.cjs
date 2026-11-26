@@ -25,5 +25,6 @@ const production={
   mix:{path:"voiceover.mp3",sha256:sha(path.join(scene,"voiceover.mp3"))},
   motion:[0,10,20,31,42,54,65,77,cfg.duration].slice(0,-1).map((start,i)=>({start,end:[10,20,31,42,54,65,77,cfg.duration][i],role:"information",reason:"Left-side Walmart shopping metaphor changes to the next narrated idea.",region:[40,100,1140,680]}))
 };
+fs.appendFileSync(path.join(project,"scene/renderer.cjs"),`module.exports.productionAssets=[{path:"assets/rig/spider-approved.svg",sha256:"${sha(path.join(scene,"assets/rig/spider-approved.svg"))}"}];\n`);
 fs.writeFileSync(path.join(scene,"production.json"),JSON.stringify(production,null,2));
 console.log(JSON.stringify({project,words:n,duration:cfg.duration,frames}));
