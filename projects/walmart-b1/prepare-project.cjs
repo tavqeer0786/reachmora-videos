@@ -19,9 +19,11 @@ function line(x,y,points,color="#191916",lineWidth=4){return {type:"line",x,y,po
 const assets={cal:"@b1/calendar-crayon.png",tv:"@b1/camera-handdrawn.png",note:"@b1/idea-note-crayon.png",bulb:"@b1/idea-bulb-crayon.png",clap:"@b1/clapper-crayon.png",script:"@b1/script-page-crayon.png",open:"@b1/open-source-crayon.png",yt:"@b1/youtube-crayon.png"};
 function shot(i,start,end){
  const t=i%10, S=[];
+ const span=end-start;
  const titles=chapter==="1"?["ONE SHOPPING DAY","THE LIST KEEPS GROWING","PEOPLE BUY IN STAGES","THE SEASON COMES IN WAVES","A SECOND CHANCE","NOT EVERYONE IS READY","ANOTHER REASON TO LOOK","BLACK FRIDAY ISN'T THE FINISH","MORE THAN ONE MOMENT","THE QUESTION"]:["PRICE IS ONLY ONE PART","A STORE AND A SCREEN","THE HOLIDAY LIST","MANY NEEDS. ONE TRIP.","CHECK STOCK FIRST","PICKUP OR DELIVERY","THE SAME SHOPPING SYSTEM","ONE BASKET, MANY DECISIONS","CONVENIENCE HAS A JOB","THE NEXT VISIT"];
  S.push(text(titles[t],86,58,t===0?56:50,t%3===0?"#EC4338":"#191916"));
- S.push(pose((i+t)%3,720,15,430,[{t:0,y:35},{t:.35,y:25}]));
+ const motionKeys=[{t:0,y:35,angle:-.015},{t:Math.min(.7,span-.5),y:25,angle:.012},{t:Math.min(1.4,span-.35),y:35,angle:-.01},{t:Math.min(2.1,span-.2),y:25,angle:.01},{t:Math.max(2.2,span-.05),y:35,angle:-.015}].filter((k,i,a)=>i===0||k.t>a[i-1].t&&k.t<span);
+ S.push(pose((i+t)%3,720,15,430,motionKeys));
  if(t===0){S.push(img(assets.cal,90,265,190),img(assets.tv,330,280,180),arrow(520,370,250,"#EC4338"),img(assets.note,815,270,220));}
  if(t===1){S.push(img(assets.note,90,250,220),img(assets.bulb,390,260,180),line(620,370,[[0,0],[220,-40],[410,25]],"#EC4338",5),img(assets.cal,940,250,180));}
  if(t===2){S.push(img(assets.tv,100,260,180),img(assets.note,360,270,190),img(assets.clap,650,260,190),img(assets.script,940,250,190));}
