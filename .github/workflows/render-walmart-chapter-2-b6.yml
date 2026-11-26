@@ -1,0 +1,37 @@
+name: Render Walmart Chapter 2 B6 Meme Story
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install canvas runtime
+        working-directory: skills/directing-stickman-videos
+        run: npm ci
+      - name: Download the public B6 painted asset pack
+        run: git clone --depth 1 https://github.com/kaomei/stickman-video-director.git "$RUNNER_TEMP/stickman-video-director"
+      - name: Prepare Chapter 2 project
+        run: |
+          mkdir -p "$RUNNER_TEMP/walmart-b6-project"
+          cp projects/walmart-chapter-2/script.md "$RUNNER_TEMP/walmart-b6-project/script.md"
+          cp projects/walmart-chapter-2/voiceover.mp3 "$RUNNER_TEMP/walmart-b6-project/voiceover.mp3"
+      - name: Render B6 video on GitHub CPU
+        run: node projects/walmart-chapter-2/b6-render.cjs "$RUNNER_TEMP/walmart-b6-project" "$RUNNER_TEMP/stickman-video-director"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: walmart-black-friday-chapter-2-b6
+          path: ${{ runner.temp }}/walmart-b6-project/walmart-black-friday-chapter-2-b6.mp4
+          if-no-files-found: error
+          retention-days: 7
