@@ -1,0 +1,42 @@
+name: Render Walmart Chapter 1 Exact B5 Template
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: skills/directing-stickman-videos/package-lock.json
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install B5 dependencies
+        working-directory: skills/directing-stickman-videos
+        run: npm ci
+      - name: Initialize the exact tested B5 scaffold
+        run: node skills/directing-stickman-videos/scripts/character-explainer.mjs init "$RUNNER_TEMP/walmart-b5-project" --reference-scaffold
+      - name: Add Walmart story files to the temporary project
+        run: |
+          cp projects/walmart-chapter-1/script.md "$RUNNER_TEMP/walmart-b5-project/script.md"
+          cp projects/walmart-chapter-1/stage.cjs "$RUNNER_TEMP/walmart-b5-project/stage.cjs"
+      - name: Replace only the left-side stage and story timing
+        run: node projects/walmart-chapter-1/prepare-b5.cjs "$RUNNER_TEMP/walmart-b5-project"
+      - name: Render the official B5 presenter and caption template
+        run: node skills/directing-stickman-videos/scripts/character-explainer.mjs frames "$RUNNER_TEMP/walmart-b5-project" --output "$RUNNER_TEMP/walmart-b5-frames" --all --trusted-code
+      - name: Encode with the supplied voice-over
+        run: node skills/directing-stickman-videos/scripts/character-explainer.mjs encode "$RUNNER_TEMP/walmart-b5-project" --frames-dir "$RUNNER_TEMP/walmart-b5-frames" --audio projects/walmart-chapter-1/voiceover.mp3 --output "$RUNNER_TEMP/walmart-b5-candidate"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: walmart-black-friday-chapter-1-exact-b5
+          path: ${{ runner.temp }}/walmart-b5-candidate
+          if-no-files-found: error
+          retention-days: 7
