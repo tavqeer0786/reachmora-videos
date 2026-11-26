@@ -19,4 +19,6 @@ const replacement=`function captions(t){
  return html;
 }
 `;
-s=s.slice(0,start)+replacement+s.slice(end); fs.writeFileSync(p,s);
+s=s.slice(0,start)+replacement+s.slice(end);
+s=s.replace('module.exports={frame,presenter,captions,levels,blinks};','module.exports={frame,qualityFrame:t=>frame(t),presenter,captions,levels,blinks,productionAssets:[{path:"assets/rig/spider-approved.svg"}]};');
+fs.writeFileSync(p,s);
