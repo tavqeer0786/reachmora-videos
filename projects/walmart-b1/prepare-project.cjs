@@ -4,6 +4,8 @@ const [dir,audio,script,chapter]=process.argv.slice(2);
 if(!dir||!audio||!script)throw new Error("usage: prepare-project.cjs PROJECT AUDIO SCRIPT CHAPTER");
 const probe=JSON.parse(cp.execFileSync("ffprobe",["-v","error","-show_format","-of","json",audio],{encoding:"utf8"}));
 const duration=Number(probe.format.duration),W=1280,H=720,FPS=30;
+const bed=path.join(dir,"room-tone.wav");
+cp.execFileSync("ffmpeg",["-y","-f","lavfi","-i",`anoisesrc=color=pink:amplitude=0.003:duration=${duration.toFixed(3)}:sample_rate=48000`,"-c:a","pcm_s16le",bed],{stdio:"ignore"});
 const raw=fs.readFileSync(script,"utf8").replace(/^#.*$/gm,"").replace(/\*\*/g,"").trim();
 const words=raw.split(/\s+/).filter(Boolean).map(x=>x.replace(/[^A-Za-z0-9?'’-]/g,""));
 const clean=words.filter(Boolean), captions=[];
@@ -34,6 +36,6 @@ function shot(i,start,end){
 }
 const shots=[], count=Math.ceil(duration/3.2);
 for(let i=0;i<count;i++){const start=Number((i*duration/count).toFixed(3)),end=i===count-1?duration:Number(((i+1)*duration/count).toFixed(3));shots.push(shot(i,start,end));}
-const project={version:1,style:"B1",width:W,height:H,fps:FPS,voice:{path:"narration.mp3",lead:0,tail:0,contains_sfx:false},captions,shots,sfx:shots.map((s,i)=>({time:Number((s.start+.25).toFixed(3)),kind:i%3===0?"paper":"tap",gain:.12})),reference_review:{author_id:"codex",capability:{mode:"sample_target",environment:"GitHub Actions CPU with upstream B1 autopilot renderer",limitations:[]}},metadata:{chapter,source_script:path.basename(script)}};
+const project={version:1,style:"B1",width:W,height:H,fps:FPS,voice:{path:"narration.mp3",lead:0,tail:0,contains_sfx:false},ambience:[{path:"room-tone.wav",start:0,end:duration,gain:.03,offset:0,loop:true,fadeIn:1,fadeOut:1}],captions,shots,sfx:shots.map((s,i)=>({time:Number((s.start+.25).toFixed(3)),kind:i%3===0?"paper":"tap",gain:.12})),reference_review:{author_id:"codex",capability:{mode:"sample_target",environment:"GitHub Actions CPU with upstream B1 autopilot renderer",limitations:[]}},metadata:{chapter,source_script:path.basename(script)}};
 fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,"project.json"),JSON.stringify(project,null,2));
 console.log(JSON.stringify({dir,duration,words:clean.length,shots:shots.length,captions:captions.length}));
