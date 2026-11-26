@@ -1,5 +1,5 @@
 import sys, time
-from scenes import *
+from scenes_all import *
 frame, scenes = make_renderer()
 ts = [float(x) for x in sys.argv[2:]]
 t0=time.time()
