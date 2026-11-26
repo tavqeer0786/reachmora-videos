@@ -24,8 +24,8 @@ function shot(i,start,end){
  S.push(text(titles[t],86,58,t===0?56:50,t%3===0?"#EC4338":"#191916"));
  const motionKeys=[{t:0,y:35,angle:-.015},{t:Math.min(.7,span-.5),y:25,angle:.012},{t:Math.min(1.4,span-.35),y:35,angle:-.01},{t:Math.min(2.1,span-.2),y:25,angle:.01},{t:Math.max(2.2,span-.05),y:35,angle:-.015}].filter((k,i,a)=>i===0||k.t>a[i-1].t&&k.t<span);
  const actor=pose((i+t)%3,720,15,430,motionKeys); actor.id=`chapter-${chapter}-actor-${i}`; actor.motion={role:"actor",reason:"Presenter shifts attention and reacts to the current shopping idea."}; S.push(actor);
- if(t===0){S.push(img(assets.cal,90,265,190),img(assets.tv,330,280,180),arrow(520,370,250,"#EC4338"),img(assets.note,815,270,220));}
- if(t===1){S.push(img(assets.note,90,250,220),img(assets.bulb,390,260,180),line(620,370,[[0,0],[220,-40],[410,25]],"#EC4338",5),img(assets.cal,940,250,180));}
+ if(t===0){if(chapter==="2"){S.push(text("PRICE",110,275,42,"#EC4338",220),text("CONVENIENCE",430,275,42,"#191916",360),arrow(650,365,210),img(assets.note,930,255,190));}else S.push(img(assets.cal,90,265,190),img(assets.tv,330,280,180),arrow(520,370,250,"#EC4338"),img(assets.note,815,270,220));}
+ if(t===1){if(chapter==="2"){S.push(text("STORE",100,285,44,"#EC4338",260),text("WEBSITE",450,285,44,"#191916",300),text("APP",820,285,44,"#EC4338",220),arrow(300,380,140),arrow(650,380,140));}else S.push(img(assets.note,90,250,220),img(assets.bulb,390,260,180),line(620,370,[[0,0],[220,-40],[410,25]],"#EC4338",5),img(assets.cal,940,250,180));}
  if(t===2){S.push(img(assets.tv,100,260,180),img(assets.note,360,270,190),img(assets.clap,650,260,190),img(assets.script,940,250,190));}
  if(t===3){S.push(img(assets.cal,90,250,180),line(310,360,[[0,0],[165,0],[330,-90],[500,0]],"#EC4338",6),img(assets.clap,855,255,190));}
  if(t===4){S.push(img(assets.clap,100,270,190),arrow(355,370,220),img(assets.note,650,260,200),text("ANOTHER LOOK",700,490,36,"#EC4338",500));}
