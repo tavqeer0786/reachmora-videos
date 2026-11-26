@@ -151,19 +151,128 @@ def chapter_specs(kind):
     }[kind]
 
 
+def fastshot(a, b, heading, caption, assets, base, spot, color=(70, 120, 200), mood="neutral", flip=False, light=False):
+    """A short, busy shot: moving character plus two independently animated props."""
+    span = b - a
+    x0 = 250 if not flip else 1660
+    x1 = 600 if not flip else 1310
+    moving = Item(
+        sc(person(color, mood, lh=(-95, 75), rh=(95, 35), flip=flip), .72),
+        x0, 610, a, "pop", .22, bob=7, sway=2.5,
+        path=[(a, x0, 610), (a + span * .45, (x0 + x1) / 2, 590), (b - .08, x1, 610)],
+    )
+    items = [
+        title(heading, a, INK if light else WHITE, 105, 48),
+        moving,
+        prop(assets[0], 820, 400, a + .12, .62, "pop"),
+        prop(assets[1], 1190, 470, a + .42, .62, "slide", dx=180 if not flip else -180),
+        prop(lambda: arrow(230, RED if not light else INK), 1010, 650, a + .68, .62, "wipe"),
+        Item(label(caption, 48, GOLD if not light else RED), 1050, 875, a + .88, "pop", .2),
+    ]
+    return make_shot(a, b, "", items, base, spot, floor=(22, 26, 38) if base == NAVY2 else None, focus=(960, 540))
+
+
+def fast_beats(kind):
+    # Each beat is a script-specific visual pair. The list cycles with changed
+    # pose/entry direction so the timeline never sits on one still scene.
+    common = {
+        0: [("THE HOOK", "DEALS AREN'T OVER", lambda: banner("BLACK FRIDAY", 520, 130, RED, WHITE, 60), lambda: banner("PART 2", 420, 130, GOLD, INK, 60), NAVY2, NAVY2_S, "surprised"),
+            ("SHOPPERS RUSH", "TVS / TOYS / ELECTRONICS", lambda: tv(), lambda: gift(), BLUE2, BLUE2_S, "happy"),
+            ("THE FIRST EVENT ENDS", "ONE CHANCE?", lambda: calendar("27", "NOV", "EVENT 1"), lambda: xmark(260), WARM2, WARM2_S, "worried"),
+            ("ANOTHER WAVE", "RETURN TO WALMART", lambda: store(), lambda: phone(420, 780, app_screen), SAGE2, SAGE2_S, "think"),
+            ("THE BIG QUESTION", "WHY WAIT?", lambda: money_sack(), lambda: qmark(280), NAVY2, NAVY2_S, "think")],
+        2: [("STORE + SCREEN", "ONE ECOSYSTEM", lambda: store(), lambda: phone(420, 780, app_screen), SAGE2, SAGE2_S, "neutral"),
+            ("THE HOLIDAY LIST", "MANY NEEDS", lambda: tv(), lambda: grocery_bag(), PEACH2, PEACH2_S, "think"),
+            ("ONE TRIP", "TV / TOYS / SNACKS", lambda: gift(), lambda: grocery_bag(), SAGE2, SAGE2_S, "happy"),
+            ("CHECK STOCK", "BEFORE YOU DRIVE", lambda: browser(), lambda: magnifier(), SAGE2, SAGE2_S, "think"),
+            ("PHYSICAL + DIGITAL", "TWO WAYS TO SHOP", lambda: store(), lambda: laptop(), NAVY2, NAVY2_S, "happy"),
+            ("PICKUP OR DELIVERY", "LESS FRICTION", lambda: cart(), lambda: package_box(), NAVY2, NAVY2_S, "happy"),
+            ("THE RIGHT OPTION", "FIT THE NEED", lambda: pin(130), lambda: calendar("02", "DEC", "RETURN"), BLUE2, BLUE2_S, "think"),
+            ("NOT JUST PRICE", "TIME MATTERS", lambda: clock(220, 6, 25), lambda: qmark(250), WARM2, WARM2_S, "worried")],
+        3: [("THE FIRST VISIT", "BUY ONCE", lambda: calendar("27", "NOV", "VISIT 1"), lambda: tv(), BLUE2, BLUE2_S, "happy"),
+            ("THE SECOND VISIT", "COME BACK", lambda: calendar("02", "DEC", "VISIT 2"), lambda: gift(), BLUE2, BLUE2_S, "happy"),
+            ("CYBER MONDAY", "ANOTHER CHECK", lambda: laptop(), lambda: sparkle(45), SAGE2, SAGE2_S, "think"),
+            ("PAYDAY / TIMING", "NOT READY YET", lambda: clock(220, 9, 40), lambda: money_sack(), WARM2, WARM2_S, "worried"),
+            ("COMPARE FIRST", "THEN DECIDE", lambda: browser(), lambda: magnifier(), SAGE2, SAGE2_S, "think"),
+            ("THE APP REMINDS", "STAY IN CONSIDERATION", lambda: phone(420, 780, app_screen), lambda: sparkle(42), BLUE2, BLUE2_S, "happy"),
+            ("REPEAT ENGAGEMENT", "MORE OPPORTUNITIES", lambda: timeline(120, 880, 760), lambda: cart(), NAVY2, NAVY2_S, "happy"),
+            ("THE QUESTION", "WHAT BRINGS THEM BACK?", lambda: qmark(280), lambda: hero(1, 1, 0) if False else money_sack(), WARM2, WARM2_S, "think")],
+        4: [("WALMART+", "MORE THAN A TRANSACTION", lambda: wm_board(), lambda: phone(420, 780, app_screen), NAVY2, NAVY2_S, "happy"),
+            ("DELIVERY", "WHEN YOU NEED IT", lambda: delivery_truck(), lambda: pin(130), SAGE2, SAGE2_S, "happy"),
+            ("SHIPPING PERKS", "SUBJECT TO TERMS", lambda: package_box(), lambda: calendar("02", "DEC", "DELIVERY"), PEACH2, PEACH2_S, "neutral"),
+            ("KEEP USING ONE RETAILER", "LESS SWITCHING", lambda: store(), lambda: cart(), BLUE2, BLUE2_S, "think"),
+            ("CONVENIENCE", "A REASON TO RETURN", lambda: phone(420, 780, app_screen), lambda: sparkle(42), SAGE2, SAGE2_S, "happy"),
+            ("NOT EVERY DEAL", "IS EXCLUSIVE", lambda: warning(), lambda: xmark(240), RED2, RED2_S, "worried"),
+            ("MARGINS MATTER", "SELECTIVE DISCOUNTS", lambda: money_sack(), lambda: tag_label("SALE", 300, 100, RED, WHITE, 44), WARM2, WARM2_S, "think"),
+            ("THE NEXT QUESTION", "WHICH PRODUCTS?", lambda: qmark(280), lambda: tv(), NAVY2, NAVY2_S, "think")],
+        5: [("HEADLINE PRODUCT", "GET ATTENTION", lambda: tv(), lambda: tag_label("SALE", 300, 100, RED, WHITE, 44), BLUE2, BLUE2_S, "surprised"),
+            ("POPULAR TOY", "A REASON TO LOOK", lambda: teddy(), lambda: gift(), WARM2, WARM2_S, "happy"),
+            ("LAPTOP / GAMING", "EASY TO COMPARE", lambda: laptop(), lambda: browser(), SAGE2, SAGE2_S, "think"),
+            ("ADD-ONS", "SOUNDBAR / CABLES", lambda: tv(), lambda: package_box(), NAVY2, NAVY2_S, "happy"),
+            ("TOYS BRING MORE", "BATTERIES / WRAP", lambda: teddy(), lambda: gift(), PEACH2, PEACH2_S, "happy"),
+            ("THE BASKET GROWS", "MORE CATEGORIES", lambda: basket(), lambda: grocery_bag(), SAGE2, SAGE2_S, "happy"),
+            ("INVENTORY", "WHEN TO PROMOTE", lambda: calendar("02", "DEC", "DROP"), lambda: store(), NAVY2, NAVY2_S, "think"),
+            ("THE HYPE", "WHY CHECK AGAIN?", lambda: qmark(280), lambda: phone(420, 780, app_screen), RED2, RED2_S, "worried")],
+        6: [("LIMITED WINDOW", "ACT SOON", lambda: clock(220, 3, 10), lambda: tag_label("LIMITED", 330, 105, RED, WHITE, 42), RED2, RED2_S, "worried"),
+            ("CHECK THE NEXT WAVE", "WHAT CHANGED?", lambda: phone(420, 780, app_screen), lambda: magnifier(), SAGE2, SAGE2_S, "think"),
+            ("WAIT OR BUY", "CUSTOMERS DECIDE", lambda: clock(220, 9, 40), lambda: money_sack(), WARM2, WARM2_S, "worried"),
+            ("READ REVIEWS", "COMPARE FIRST", lambda: browser(), lambda: magnifier(), PEACH2, PEACH2_S, "think"),
+            ("URGENCY", "BRINGS THEM BACK", lambda: megaphone(), lambda: phone(420, 780, app_screen), BLUE2, BLUE2_S, "surprised"),
+            ("BUT BE CAREFUL", "DISCOUNTS GET CHECKED", lambda: warning(), lambda: browser(), RED2, RED2_S, "worried"),
+            ("AMAZON / TARGET", "SAME CUSTOMER", lambda: amazon_tile(), lambda: target_tile(), SAGE2, SAGE2_S, "think"),
+            ("WHAT SEPARATES WALMART?", "THE NEXT QUESTION", lambda: wm_board(), lambda: qmark(250), NAVY2, NAVY2_S, "think")],
+        7: [("AMAZON", "ONLINE SCALE", lambda: amazon_tile(), lambda: browser(), SAGE2, SAGE2_S, "think"),
+            ("TARGET", "A DIFFERENT MIX", lambda: target_tile(), lambda: store(), PEACH2, PEACH2_S, "happy"),
+            ("WALMART", "STORE + DIGITAL", lambda: wm_board(), lambda: phone(420, 780, app_screen), BLUE2, BLUE2_S, "happy"),
+            ("COMPARE PRICES", "SWITCHING IS EASY", lambda: browser(), lambda: magnifier(), SAGE2, SAGE2_S, "think"),
+            ("CHECK AVAILABILITY", "BEFORE BUYING", lambda: magnifier(), lambda: pin(130), PEACH2, PEACH2_S, "think"),
+            ("REVIEWS + ASSORTMENT", "MORE THAN A DEAL", lambda: laptop(), lambda: gift(), NAVY2, NAVY2_S, "happy"),
+            ("CATEGORY BY CATEGORY", "KEEP THE OPTION OPEN", lambda: tv(), lambda: teddy(), WARM2, WARM2_S, "think"),
+            ("THE SAME CUSTOMER", "THE FIGHT CONTINUES", lambda: person((70, 120, 200), "worried"), lambda: qmark(250), RED2, RED2_S, "worried")],
+        8: [("EARLY PROMOTIONS", "THE SEASON STARTS", lambda: calendar("01", "NOV", "EARLY"), lambda: megaphone(), NAVY2, NAVY2_S, "happy"),
+            ("BLACK FRIDAY", "ONE WAVE", lambda: banner("BLACK FRIDAY", 520, 130, RED, WHITE, 60), lambda: tv(), BLUE2, BLUE2_S, "surprised"),
+            ("CYBER MONDAY", "ANOTHER WAVE", lambda: laptop(), lambda: phone(420, 780, app_screen), SAGE2, SAGE2_S, "think"),
+            ("WEEKS TO CHRISTMAS", "MORE DECISIONS", lambda: calendar("24", "DEC", "CHRISTMAS"), lambda: tree(), PEACH2, PEACH2_S, "happy"),
+            ("STAY VISIBLE", "WHILE THEY DECIDE", lambda: store(), lambda: sparkle(45), NAVY2, NAVY2_S, "happy"),
+            ("ONE ECOSYSTEM", "MANY NEEDS", lambda: cart(), lambda: grocery_bag(), SAGE2, SAGE2_S, "happy"),
+            ("REPEAT SHOPPING", "THE HABIT", lambda: timeline(120, 880, 760), lambda: person((70, 120, 200), "happy"), BLUE2, BLUE2_S, "happy"),
+            ("THE REAL PRIZE", "THE ENTIRE SEASON", lambda: qmark(280), lambda: wm_board(), NAVY2, NAVY2_S, "think")],
+        9: [("SALE 1", "THE FIRST OPPORTUNITY", lambda: banner("SALE 1", 420, 130, RED, WHITE, 60), lambda: tv(), BLUE2, BLUE2_S, "happy"),
+            ("SALE 2", "THE SECOND OPPORTUNITY", lambda: banner("SALE 2", 420, 130, GOLD, INK, 60), lambda: gift(), WARM2, WARM2_S, "happy"),
+            ("THE NEXT VISIT", "ANOTHER CHANCE", lambda: calendar("02", "DEC", "RETURN"), lambda: store(), SAGE2, SAGE2_S, "think"),
+            ("THE BASKET", "MORE THAN ONE PRODUCT", lambda: basket(), lambda: grocery_bag(), PEACH2, PEACH2_S, "happy"),
+            ("THE CUSTOMER", "CHOOSES AGAIN", lambda: person((70, 120, 200), "happy"), lambda: phone(420, 780, app_screen), BLUE2, BLUE2_S, "happy"),
+            ("NOT JUST PRICE", "CONVENIENCE + SCALE", lambda: wm_board(), lambda: sparkle(45), NAVY2, NAVY2_S, "think"),
+            ("THE QUESTION", "WHY WALMART AGAIN?", lambda: qmark(300), lambda: amazon_tile(), RED2, RED2_S, "worried")],
+    }
+    return common[kind]
+
+
+def add_fast_chapter(S, start, length, kind):
+    beats = fast_beats(kind)
+    count = max(len(beats), math.ceil(length / 1.9))
+    step = length / count
+    for i in range(count):
+        a, b = start + i * step, start + (i + 1) * step
+        heading, caption, p1, p2, base, spot, mood = beats[i % len(beats)]
+        S.append(fastshot(a, b, heading, caption, [p1, p2], base, spot,
+                          color=((70 + (i * 17) % 110), 120, 200), mood=mood,
+                          flip=(i % 2 == 1), light=(base[0] > 100)))
+
+
 def build():
     S = []
     # Hook is 0..72.36. Existing supplied Chapter 1 animation follows it.
-    hook_start = 0.0
-    add_chapter(S, hook_start, AUDIO[0], "", build_hook(hook_start, AUDIO[0]))
+    # The hook and every later chapter use short micro-shots; Chapter 1 keeps
+    # the original supplied Claude scene block as the visual reference.
+    add_fast_chapter(S, 0.0, AUDIO[0], 0)
     ch1_offset = AUDIO[0]
     for s in c1.build():
         shift_scene(s, ch1_offset)
         S.append(s)
     offset = AUDIO[0] + AUDIO[1]
     for idx in range(2, 10):
-        specs = chapter_specs(idx)
-        add_chapter(S, offset, AUDIO[idx], "", specs)
+        add_fast_chapter(S, offset, AUDIO[idx], idx)
         offset += AUDIO[idx]
     return S
 
