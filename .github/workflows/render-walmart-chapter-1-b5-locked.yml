@@ -44,7 +44,7 @@ jobs:
           const manifest={
             presenter:{kind:'complex_character',path:'assets/rig/spider-approved.svg',sha256:sha('assets/rig/spider-approved.svg'),identity_anchor:'Keep the bundled B5 paper/ink presenter exactly unchanged.',style_anchor:'Use the approved bundled B5 presenter rig, mouth, gestures and scale.',static_approval:'User requested preservation of the previously tested B5 presenter.',source:{type:'approved_reuse',origin:'bundled B5 CPU test scaffold',references:[]}},
             captions:{preset:'b5-instrument-anton-v1',font:{path:'assets/fonts/Instrument-Sans-1.ttf',sha256:sha('assets/fonts/Instrument-Sans-1.ttf')},title_font:{path:'assets/fonts/Anton-0.ttf',sha256:sha('assets/fonts/Anton-0.ttf')},semantic_review:'Chapter 1 sentence groups generated from the supplied script and timed across the supplied voice-over; preserve the original B5 upper-right caption animation and emphasis treatment.'},
-            sound:[{kind:'dialogue',start:0,end:87.9061,reason:'Supplied Chapter 1 voice-over',path:'audio/final.wav',sha256:sha('audio/final.wav'),rights:'User-supplied audio'}],
+            sound:[{kind:'dialogue',start:0,end:87.9061,reason:'Supplied Chapter 1 voice-over',path:'audio/final.wav',sha256:sha('audio/final.wav'),rights:'User-supplied audio'},{kind:'quiet',start:0,end:87.9061,reason:'Dialogue-only mix requested for this first test; no additional ambience supplied.'}],
             sound_review:'Technical encode check only; full listening review remains pending.',
             mix:{path:'audio/final.wav',sha256:sha('audio/final.wav')},
             motion:[{start:0,end:87.9061,role:'information',reason:'Left-stage Walmart shopping metaphors progress through chapter beats.',region:[0,0,1240,1080]}],
