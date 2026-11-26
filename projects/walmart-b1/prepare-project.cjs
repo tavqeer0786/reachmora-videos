@@ -49,7 +49,7 @@ async function main(){
   if(chapter==="1"){
    if(t===0)S.push(img(A("calendar"),70,235,180),img(A("tv"),300,260,210),arrow(525,350,220),img(A("shopper"),760,200,230));
    if(t===1)S.push(img(A("tv"),70,245,180),img(A("toy"),320,250,170),img(A("decorations"),555,245,190),img(A("groceries"),820,245,210));
-   if(t===2)S.push(img(A("tv"),70,260,180),img(A("toy"),325,265,165),img(A("decorations"),570,255,180),img(A("calendar"),835,240,180),text("NOVEMBER → NEXT WEEK → CHRISTMAS",110,520,30,red,900));
+   if(t===2)S.push(img(A("tv"),70,260,180),img(A("toy"),325,265,165),img(A("decorations"),570,255,180),img(A("calendar"),835,240,180),text("NOVEMBER / NEXT WEEK / CHRISTMAS",110,520,30,red,900));
    if(t===3)S.push(img(A("calendar"),70,245,180),line(300,350,[[0,0],[160,0],[320,-80],[500,0]],red,7),img(A("decorations"),850,250,210));
    if(t===4)S.push(img(A("calendar"),80,250,180),arrow(310,365,230),img(A("tv"),650,255,190),text("ANOTHER LOOK",660,510,38,red,500));
    if(t===5)S.push(img(A("shopper"),70,180,230),img(A("tv"),380,260,180),text("NOT READY YET",620,300,42,red,400),line(600,370,[[0,0],[230,0]],ink,5));
@@ -61,7 +61,7 @@ async function main(){
    if(t===0)S.push(text("PRICE",100,285,44,red,220),text("CONVENIENCE",430,285,44,ink,360),arrow(650,375,210),img(A("shopper"),900,190,220));
    if(t===1)S.push(img(A("store"),70,230,240),arrow(340,365,160),img(A("screen"),500,235,240),arrow(770,365,160),img(A("phone-shopper"),930,180,220));
    if(t===2)S.push(img(A("family"),65,250,270),img(A("tv"),390,265,175),img(A("toy"),610,255,160),img(A("groceries"),820,250,190));
-   if(t===3)S.push(img(A("family"),60,245,270),img(A("groceries"),390,260,190),img(A("decorations"),650,250,185),text("MANY NEEDS → ONE TRIP",390,510,35,red,620));
+   if(t===3)S.push(img(A("family"),60,245,270),img(A("groceries"),390,260,190),img(A("decorations"),650,250,185),text("MANY NEEDS / ONE TRIP",390,510,35,red,620));
    if(t===4)S.push(img(A("phone-shopper"),70,180,220),img(A("screen"),400,245,245),arrow(690,365,220),text("CHECK AVAILABILITY",715,500,34,red,500));
    if(t===5)S.push(img(A("pickup"),70,240,230),arrow(340,365,210),img(A("delivery"),660,240,240),text("PICKUP OR DELIVERY",470,510,34,ink,620));
    if(t===6)S.push(img(A("store"),70,235,220),img(A("screen"),360,245,220),img(A("phone-shopper"),680,175,220),arrow(920,365,170));
