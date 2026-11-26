@@ -47,7 +47,7 @@ jobs:
             sound:[{kind:'dialogue',start:0,end:87.9061,reason:'Supplied Chapter 1 voice-over',path:'audio/final.wav',sha256:sha('audio/final.wav'),rights:'User-supplied audio'},{kind:'quiet',start:0,end:87.9061,reason:'Dialogue-only mix requested for this first test; no additional ambience supplied.'}],
             sound_review:'Technical encode check only; full listening review remains pending.',
             mix:{path:'audio/final.wav',sha256:sha('audio/final.wav')},
-            motion:[{start:0,end:87.9061,role:'information',reason:'Left-stage Walmart shopping metaphors progress through chapter beats.',region:[0,0,1240,1080]}],
+            motion:[{start:0,end:87.9061,role:'information',reason:'Left-stage Walmart shopping metaphors progress through chapter beats.',region:[40,80,1080,960]}],
             holds:[]
           };
           fs.writeFileSync(path.join(scene,'production.json'),JSON.stringify(manifest,null,2));
