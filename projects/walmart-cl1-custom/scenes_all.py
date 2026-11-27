@@ -1,5 +1,7 @@
 """Full Walmart documentary timeline using the supplied flat-puppet scene style."""
 import math
+import pathlib
+import re
 import scenes as c1
 from scenes import *
 
@@ -156,11 +158,7 @@ def fastshot(a, b, heading, caption, assets, base, spot, color=(70, 120, 200), m
     span = b - a
     x0 = 250 if not flip else 1660
     x1 = 600 if not flip else 1310
-    moving = Item(
-        sc(person(color, mood, lh=(-95, 75), rh=(95, 35), flip=flip), .72),
-        x0, 610, a, "pop", .22, bob=7, sway=2.5,
-        path=[(a, x0, 610), (a + span * .45, (x0 + x1) / 2, 590), (b - .08, x1, 610)],
-    )
+    moving = ActorItem(a, x0, 610, color, mood, flip, span, x1)
     items = [
         title(heading, a, INK if light else WHITE, 105, 48),
         moving,
@@ -170,6 +168,24 @@ def fastshot(a, b, heading, caption, assets, base, spot, color=(70, 120, 200), m
         Item(label(caption, 48, GOLD if not light else RED), 1050, 875, a + .88, "pop", .2),
     ]
     return make_shot(a, b, "", items, base, spot, floor=(22, 26, 38) if base == NAVY2 else None, focus=(960, 540))
+
+
+class ActorItem(Item):
+    """Cartoon actor with a small pose cycle: head/face, hands and body all change."""
+    def __init__(self, t0, x, y, color, mood, flip, span, x1):
+        self.pose_sprites = [
+            sc(person(color, mood, lh=(-95, 75), rh=(95, 35), flip=flip), .72),
+            sc(person(color, "think", lh=(-35, -55), rh=(115, 25), flip=flip), .72),
+            sc(person(color, "happy", lh=(-115, 20), rh=(105, -65), flip=flip), .72),
+            sc(person(color, "surprised", lh=(-80, -70), rh=(80, -70), flip=flip), .72),
+        ]
+        super().__init__(self.pose_sprites[0], x, y, t0, "pop", .22, bob=7, sway=2.5,
+                         path=[(t0, x, y), (t0 + span * .45, (x + x1) / 2, y - 20), (t0 + span - .08, x1, y)])
+
+    def draw(self, base, t):
+        if t >= self.t0:
+            self.spr = self.pose_sprites[int((t - self.t0) / .34) % len(self.pose_sprites)]
+        super().draw(base, t)
 
 
 def fast_beats(kind):
@@ -260,19 +276,119 @@ def add_fast_chapter(S, start, length, kind):
                           flip=(i % 2 == 1), light=(base[0] > 100)))
 
 
+def spoken_paragraphs():
+    p = pathlib.Path(__file__).with_name("script.md")
+    raw = p.read_text(encoding="utf-8")
+    chunks = re.split(r"(?m)^##\s+", raw)
+    result = []
+    for chunk in chunks:
+        lines = chunk.splitlines()
+        if not lines:
+            continue
+        heading = lines[0].strip()
+        if not re.search(r"HOOK|CHAPTER [1-8]|FINAL CHAPTER", heading, re.I):
+            continue
+        body = "\n".join(lines[1:])
+        for para in re.split(r"\n\s*\n", body):
+            text = re.sub(r"\*\*|`", "", para)
+            text = re.sub(r"\s+", " ", text).strip()
+            if text and not text.startswith("---") and not text.startswith("#"):
+                result.append((heading, text))
+    return result
+
+
+def story_visual(text, i):
+    """Select assets from the actual narrated beat, not from a generic chapter loop."""
+    t = text.lower()
+    if "television" in t or "tv" in t:
+        return "TELEVISION", "TV DEAL", lambda: tv(), lambda: tag_label("SALE", 300, 100, RED, WHITE, 44), BLUE2, BLUE2_S, "surprised"
+    if "laptop" in t or "gaming" in t or "electronics" in t:
+        return "ELECTRONICS", "COMPARE", lambda: laptop(), lambda: browser(), SAGE2, SAGE2_S, "think"
+    if "toy" in t or "toys" in t:
+        return "TOYS", "WAIT FOR THE DEAL", lambda: teddy(), lambda: gift(), WARM2, WARM2_S, "happy"
+    if "decoration" in t or "christmas tree" in t:
+        return "DECORATIONS", "HOLIDAY", lambda: ornaments(), lambda: tree(), PEACH2, PEACH2_S, "happy"
+    if "grocer" in t or "snacks" in t or "batteries" in t:
+        return "GROCERIES", "BEFORE CHRISTMAS", lambda: grocery_bag(), lambda: cart(), SAGE2, SAGE2_S, "happy"
+    if "family" in t:
+        return "FAMILY", "HOLIDAY LIST", lambda: person((200, 90, 80), "think"), lambda: gift(), PEACH2, PEACH2_S, "think"
+    if "amazon" in t:
+        return "AMAZON", "ONLINE COMPETITOR", lambda: amazon_tile(), lambda: browser(), SAGE2, SAGE2_S, "think"
+    if "target" in t:
+        return "TARGET", "STORE COMPETITOR", lambda: target_tile(), lambda: store(), PEACH2, PEACH2_S, "think"
+    if "walmart+" in t or "membership" in t:
+        return "WALMART+", "MEMBERSHIP", lambda: wm_board(), lambda: phone(420, 780, app_screen), NAVY2, NAVY2_S, "happy"
+    if "deliver" in t or "pickup" in t or "shipping" in t:
+        return "FULFILLMENT", "PICKUP / DELIVERY", lambda: bag_shop(340, (62, 160, 90)), lambda: pin(130), SAGE2, SAGE2_S, "happy"
+    if "app" in t or "website" in t or "online" in t or "digital" in t:
+        return "DIGITAL SHOPPING", "CHECK ONLINE", lambda: phone(420, 780, app_screen), lambda: browser(), BLUE2, BLUE2_S, "think"
+    if "store" in t or "retailer" in t or "physical" in t:
+        return "STORE", "IN PERSON", lambda: store(), lambda: cart(), NAVY2, NAVY2_S, "happy"
+    if "compare" in t or "price" in t or "review" in t:
+        return "COMPARE", "CHECK THE PRICE", lambda: magnifier(), lambda: browser(), SAGE2, SAGE2_S, "think"
+    if "urgency" in t or "limited" in t or "window" in t:
+        return "URGENCY", "LIMITED WINDOW", lambda: clock(220, 3, 10), lambda: tag_label("LIMITED", 330, 105, RED, WHITE, 42), RED2, RED2_S, "worried"
+    if "inventory" in t or "available" in t or "assortment" in t:
+        return "INVENTORY", "CHECK STOCK", lambda: calendar("02", "DEC", "STOCK"), lambda: store(), SAGE2, SAGE2_S, "think"
+    if "second" in t or "again" in t or "return" in t or "repeat" in t:
+        return "RETURN", "COME BACK", lambda: calendar("02", "DEC", "RETURN"), lambda: arrow(280), BLUE2, BLUE2_S, "happy"
+    if "season" in t or "christmas" in t or "cyber monday" in t:
+        return "SEASON", "NEXT SHOPPING MOMENT", lambda: calendar("24", "DEC", "CHRISTMAS"), lambda: timeline(120, 880, 760), NAVY2, NAVY2_S, "think"
+    if "question" in t or "why" in t or "what does" in t:
+        return "QUESTION", "WHAT BRINGS THEM BACK?", lambda: qmark(300), lambda: hero(1, 1, 0) if False else wm_board(), RED2, RED2_S, "think"
+    if "one day" in t or "one event" in t or "first event" in t:
+        return "ONE EVENT", "ONE BIG MOMENT", lambda: calendar("27", "NOV", "EVENT"), lambda: xmark(260), WARM2, WARM2_S, "worried"
+    return "SHOPPING DECISION", "ANOTHER CHOICE", lambda: person((70, 120, 200), "think"), lambda: qmark(250), NAVY2, NAVY2_S, "think"
+
+
+def add_script_chapter(S, start, length, paragraphs, chapter_index):
+    if not paragraphs:
+        return
+    # Keep the edit energetic while preserving every narrated paragraph.
+    beats = []
+    for pi, (_, text) in enumerate(paragraphs):
+        # Keep each visual beat near two seconds even when one narrated
+        # paragraph contains several clauses. This is the pacing gate.
+        parts = max(1, math.ceil(len(text.split()) / 8))
+        for part in range(parts):
+            beats.append((text, pi, part, parts))
+    step = length / len(beats)
+    for i, (text, pi, part, parts) in enumerate(beats):
+        a, b = start + i * step, start + (i + 1) * step
+        heading, caption, p1, p2, base, spot, mood = story_visual(text, i)
+        # Use a different pose and direction on every beat so the character
+        # does not look pasted in place.
+        S.append(fastshot(a, b, heading, caption, [p1, p2], base, spot,
+                          color=((70 + (i * 29) % 120), 100 + (i * 11) % 90, 190),
+                          mood=mood, flip=(i % 2 == 1), light=(base[0] > 100)))
+
+
 def build():
     S = []
-    # Hook is 0..72.36. Existing supplied Chapter 1 animation follows it.
-    # The hook and every later chapter use short micro-shots; Chapter 1 keeps
-    # the original supplied Claude scene block as the visual reference.
-    add_fast_chapter(S, 0.0, AUDIO[0], 0)
+    # Use the actual script paragraphs as the source of truth. Chapter 1's
+    # original Claude block remains the style reference, while every other
+    # section gets its own paragraph-driven asset selection.
+    parsed = spoken_paragraphs()
+    groups = {}
+    for heading, text in parsed:
+        h = heading.upper()
+        if "HOOK" in h:
+            key = 0
+        elif "FINAL CHAPTER" in h:
+            key = 9
+        else:
+            m = re.search(r"CHAPTER\s+(\d+)", h)
+            key = int(m.group(1)) if m else None
+        if key is not None:
+            groups.setdefault(key, []).append((heading, text))
+    add_script_chapter(S, 0.0, AUDIO[0], groups.get(0, []), 0)
     ch1_offset = AUDIO[0]
     for s in c1.build():
         shift_scene(s, ch1_offset)
         S.append(s)
     offset = AUDIO[0] + AUDIO[1]
     for idx in range(2, 10):
-        add_fast_chapter(S, offset, AUDIO[idx], idx)
+        add_script_chapter(S, offset, AUDIO[idx], groups.get(idx, []), idx)
         offset += AUDIO[idx]
     return S
 
