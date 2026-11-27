@@ -16,6 +16,45 @@ BLUE2, BLUE2_S = (26, 66, 124), (48, 100, 176)
 PEACH2, PEACH2_S = (222, 200, 172), (240, 224, 200)
 RED2, RED2_S = (58, 26, 30), (110, 44, 50)
 
+# User-supplied visual library.  The archive contains green-screen PNGs, so
+# they are keyed here once and then reused as animated scene props.
+ASSET_DIR = pathlib.Path(__file__).with_name("assets")
+_ASSET_FILES = None
+_ASSET_CACHE = {}
+
+
+def supplied_asset(*terms):
+    """Load one supplied PNG by semantic filename terms and remove green screen."""
+    global _ASSET_FILES
+    key = tuple(str(x).lower() for x in terms)
+    if key in _ASSET_CACHE:
+        return _ASSET_CACHE[key].copy()
+    if _ASSET_FILES is None:
+        _ASSET_FILES = sorted(ASSET_DIR.glob("*.png")) if ASSET_DIR.exists() else []
+    candidates = [p for p in _ASSET_FILES if all(t in p.name.lower() for t in key)]
+    if not candidates:
+        # Accept the strongest single-term match as a fallback for filenames
+        # that were shortened by the asset-generation pipeline.
+        candidates = [p for p in _ASSET_FILES if any(t in p.name.lower() for t in key)]
+    if not candidates:
+        return None
+    img = Image.open(candidates[0]).convert("RGBA")
+    arr = np.array(img)
+    r, g, b = arr[..., 0], arr[..., 1], arr[..., 2]
+    green = (g > 125) & (g > r * 1.18) & (g > b * 1.18)
+    arr[green, 3] = 0
+    img = Image.fromarray(arr, "RGBA")
+    _ASSET_CACHE[key] = img
+    return img.copy()
+
+
+def supplied_or(fallback, *terms):
+    """Return a callable suitable for prop(), with generated fallback."""
+    def make():
+        img = supplied_asset(*terms)
+        return img if img is not None else fallback()
+    return make
+
 
 # Small aliases keep the new chapter vocabulary readable while reusing the
 # supplied prop library.
@@ -301,44 +340,44 @@ def story_visual(text, i):
     """Select assets from the actual narrated beat, not from a generic chapter loop."""
     t = text.lower()
     if "television" in t or "tv" in t:
-        return "TELEVISION", "TV DEAL", lambda: tv(), lambda: tag_label("SALE", 300, 100, RED, WHITE, 44), BLUE2, BLUE2_S, "surprised"
+        return "TELEVISION", "TV DEAL", supplied_or(tv, "television"), supplied_or(lambda: tag_label("SALE", 300, 100, RED, WHITE, 44), "price", "tag"), BLUE2, BLUE2_S, "surprised"
     if "laptop" in t or "gaming" in t or "electronics" in t:
-        return "ELECTRONICS", "COMPARE", lambda: laptop(), lambda: browser(), SAGE2, SAGE2_S, "think"
+        return "ELECTRONICS", "COMPARE", supplied_or(laptop, "laptop"), supplied_or(browser, "browser", "price"), SAGE2, SAGE2_S, "think"
     if "toy" in t or "toys" in t:
-        return "TOYS", "WAIT FOR THE DEAL", lambda: teddy(), lambda: gift(), WARM2, WARM2_S, "happy"
+        return "TOYS", "WAIT FOR THE DEAL", supplied_or(teddy, "teddy"), supplied_or(gift, "gift"), WARM2, WARM2_S, "happy"
     if "decoration" in t or "christmas tree" in t:
-        return "DECORATIONS", "HOLIDAY", lambda: ornaments(), lambda: tree(), PEACH2, PEACH2_S, "happy"
+        return "DECORATIONS", "HOLIDAY", supplied_or(ornaments, "bauble"), supplied_or(tree, "christmas", "tree"), PEACH2, PEACH2_S, "happy"
     if "grocer" in t or "snacks" in t or "batteries" in t:
-        return "GROCERIES", "BEFORE CHRISTMAS", lambda: grocery_bag(), lambda: cart(), SAGE2, SAGE2_S, "happy"
+        return "GROCERIES", "BEFORE CHRISTMAS", supplied_or(grocery_bag, "grocery"), supplied_or(cart, "shopping", "cart"), SAGE2, SAGE2_S, "happy"
     if "family" in t:
-        return "FAMILY", "HOLIDAY LIST", lambda: person((200, 90, 80), "think"), lambda: gift(), PEACH2, PEACH2_S, "think"
+        return "FAMILY", "HOLIDAY LIST", supplied_or(lambda: person((200, 90, 80), "think"), "cartoon", "person"), supplied_or(gift, "gift"), PEACH2, PEACH2_S, "think"
     if "amazon" in t:
-        return "AMAZON", "ONLINE COMPETITOR", lambda: amazon_tile(), lambda: browser(), SAGE2, SAGE2_S, "think"
+        return "AMAZON", "ONLINE COMPETITOR", supplied_or(amazon_tile, "amazon"), supplied_or(browser, "browser"), SAGE2, SAGE2_S, "think"
     if "target" in t:
-        return "TARGET", "STORE COMPETITOR", lambda: target_tile(), lambda: store(), PEACH2, PEACH2_S, "think"
+        return "TARGET", "STORE COMPETITOR", supplied_or(target_tile, "target"), supplied_or(store, "retail", "store"), PEACH2, PEACH2_S, "think"
     if "walmart+" in t or "membership" in t:
-        return "WALMART+", "MEMBERSHIP", lambda: wm_board(), lambda: phone(420, 780, app_screen), NAVY2, NAVY2_S, "happy"
+        return "WALMART+", "MEMBERSHIP", supplied_or(wm_board, "membership"), supplied_or(lambda: phone(420, 780, app_screen), "smartphone", "shopping"), NAVY2, NAVY2_S, "happy"
     if "deliver" in t or "pickup" in t or "shipping" in t:
-        return "FULFILLMENT", "PICKUP / DELIVERY", lambda: bag_shop(340, (62, 160, 90)), lambda: pin(130), SAGE2, SAGE2_S, "happy"
+        return "FULFILLMENT", "PICKUP / DELIVERY", supplied_or(lambda: bag_shop(340, (62, 160, 90)), "delivery", "truck"), supplied_or(pin, "location", "pin"), SAGE2, SAGE2_S, "happy"
     if "app" in t or "website" in t or "online" in t or "digital" in t:
-        return "DIGITAL SHOPPING", "CHECK ONLINE", lambda: phone(420, 780, app_screen), lambda: browser(), BLUE2, BLUE2_S, "think"
+        return "DIGITAL SHOPPING", "CHECK ONLINE", supplied_or(lambda: phone(420, 780, app_screen), "smartphone", "shopping"), supplied_or(browser, "web", "browser"), BLUE2, BLUE2_S, "think"
     if "store" in t or "retailer" in t or "physical" in t:
-        return "STORE", "IN PERSON", lambda: store(), lambda: cart(), NAVY2, NAVY2_S, "happy"
+        return "STORE", "IN PERSON", supplied_or(store, "walmart", "retail"), supplied_or(cart, "shopping", "cart"), NAVY2, NAVY2_S, "happy"
     if "compare" in t or "price" in t or "review" in t:
-        return "COMPARE", "CHECK THE PRICE", lambda: magnifier(), lambda: browser(), SAGE2, SAGE2_S, "think"
+        return "COMPARE", "CHECK THE PRICE", supplied_or(magnifier, "magnifying"), supplied_or(browser, "price"), SAGE2, SAGE2_S, "think"
     if "urgency" in t or "limited" in t or "window" in t:
-        return "URGENCY", "LIMITED WINDOW", lambda: clock(220, 3, 10), lambda: tag_label("LIMITED", 330, 105, RED, WHITE, 42), RED2, RED2_S, "worried"
+        return "URGENCY", "LIMITED WINDOW", supplied_or(clock, "hourglass"), supplied_or(lambda: tag_label("LIMITED", 330, 105, RED, WHITE, 42), "limited"), RED2, RED2_S, "worried"
     if "inventory" in t or "available" in t or "assortment" in t:
-        return "INVENTORY", "CHECK STOCK", lambda: calendar("02", "DEC", "STOCK"), lambda: store(), SAGE2, SAGE2_S, "think"
+        return "INVENTORY", "CHECK STOCK", supplied_or(lambda: calendar("02", "DEC", "STOCK"), "calendar"), supplied_or(store, "walmart", "retail"), SAGE2, SAGE2_S, "think"
     if "second" in t or "again" in t or "return" in t or "repeat" in t:
-        return "RETURN", "COME BACK", lambda: calendar("02", "DEC", "RETURN"), lambda: arrow(280), BLUE2, BLUE2_S, "happy"
+        return "RETURN", "COME BACK", supplied_or(lambda: calendar("02", "DEC", "RETURN"), "calendar"), supplied_or(lambda: arrow(280), "arrow"), BLUE2, BLUE2_S, "happy"
     if "season" in t or "christmas" in t or "cyber monday" in t:
-        return "SEASON", "NEXT SHOPPING MOMENT", lambda: calendar("24", "DEC", "CHRISTMAS"), lambda: timeline(120, 880, 760), NAVY2, NAVY2_S, "think"
+        return "SEASON", "NEXT SHOPPING MOMENT", supplied_or(lambda: calendar("24", "DEC", "CHRISTMAS"), "christmas", "calendar"), supplied_or(lambda: timeline(120, 880, 760), "arrow", "christmas"), NAVY2, NAVY2_S, "think"
     if "question" in t or "why" in t or "what does" in t:
-        return "QUESTION", "WHAT BRINGS THEM BACK?", lambda: qmark(300), lambda: hero(1, 1, 0) if False else wm_board(), RED2, RED2_S, "think"
+        return "QUESTION", "WHAT BRINGS THEM BACK?", supplied_or(qmark, "question"), supplied_or(wm_board, "walmart"), RED2, RED2_S, "think"
     if "one day" in t or "one event" in t or "first event" in t:
-        return "ONE EVENT", "ONE BIG MOMENT", lambda: calendar("27", "NOV", "EVENT"), lambda: xmark(260), WARM2, WARM2_S, "worried"
-    return "SHOPPING DECISION", "ANOTHER CHOICE", lambda: person((70, 120, 200), "think"), lambda: qmark(250), NAVY2, NAVY2_S, "think"
+        return "ONE EVENT", "ONE BIG MOMENT", supplied_or(lambda: calendar("27", "NOV", "EVENT"), "calendar"), supplied_or(xmark, "x", "mark"), WARM2, WARM2_S, "worried"
+    return "SHOPPING DECISION", "ANOTHER CHOICE", supplied_or(lambda: person((70, 120, 200), "think"), "cartoon", "person"), supplied_or(qmark, "question"), NAVY2, NAVY2_S, "think"
 
 
 def add_script_chapter(S, start, length, paragraphs, chapter_index):
@@ -381,13 +420,11 @@ def build():
             key = int(m.group(1)) if m else None
         if key is not None:
             groups.setdefault(key, []).append((heading, text))
-    add_script_chapter(S, 0.0, AUDIO[0], groups.get(0, []), 0)
-    ch1_offset = AUDIO[0]
-    for s in c1.build():
-        shift_scene(s, ch1_offset)
-        S.append(s)
-    offset = AUDIO[0] + AUDIO[1]
-    for idx in range(2, 10):
+    # All chapters now use the script-driven asset mapper, including chapter
+    # one.  This prevents the supplied visual library from being bypassed by
+    # the older chapter-one reference block.
+    offset = 0.0
+    for idx in range(10):
         add_script_chapter(S, offset, AUDIO[idx], groups.get(idx, []), idx)
         offset += AUDIO[idx]
     return S
